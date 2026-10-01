@@ -1,0 +1,149 @@
+name: Build desktop apps
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  macos:
+    name: macOS arm64
+    runs-on: macos-15
+    timeout-minutes: 60
+
+    steps:
+      - name: Check out FacePrint
+        uses: actions/checkout@v7
+        with:
+          path: faceprint
+
+      - name: Check out pinned pdftilecut
+        uses: actions/checkout@v7
+        with:
+          repository: eliasrenman/pdftilecut
+          ref: 5f288f69661cbf13e5a4db859ca265b80498b8d0
+          submodules: recursive
+          path: pdftilecut
+
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: faceprint/go.mod
+          cache-dependency-path: |
+            faceprint/go.sum
+            faceprint/go.work.sum
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: faceprint/frontend/package-lock.json
+
+      - name: Check frontend
+        working-directory: faceprint/frontend
+        run: |
+          npm ci
+          npm run check
+          npm test
+
+      - name: Build and test app bundle
+        working-directory: faceprint
+        run: |
+          ./scripts/package-macos.sh
+          go test ./...
+
+      - name: Archive app bundle
+        working-directory: faceprint
+        run: ditto -c -k --keepParent build/bin/FacePrint.app build/bin/FacePrint-macos-arm64.zip
+
+      - name: Upload macOS artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: FacePrint-macos-arm64
+          path: faceprint/build/bin/FacePrint-macos-arm64.zip
+          if-no-files-found: error
+
+  windows:
+    name: Windows amd64
+    runs-on: windows-2025
+    timeout-minutes: 60
+
+    steps:
+      - name: Preserve shell script line endings
+        shell: pwsh
+        run: git config --global core.autocrlf input
+
+      - name: Check out FacePrint
+        uses: actions/checkout@v7
+        with:
+          path: faceprint
+
+      - name: Check out pinned pdftilecut
+        uses: actions/checkout@v7
+        with:
+          repository: eliasrenman/pdftilecut
+          ref: 5f288f69661cbf13e5a4db859ca265b80498b8d0
+          submodules: recursive
+          path: pdftilecut
+
+      - name: Set up Go
+        uses: actions/setup-go@v7
+        with:
+          go-version-file: faceprint/go.mod
+          cache-dependency-path: |
+            faceprint/go.sum
+            faceprint/go.work.sum
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: faceprint/frontend/package-lock.json
+
+      - name: Set up MSYS2 build tools
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: true
+          path-type: inherit
+          install: >-
+            git
+            make
+          pacboy: >-
+            toolchain:p
+            cmake:p
+            ninja:p
+
+      - name: Check frontend
+        working-directory: faceprint/frontend
+        shell: pwsh
+        run: |
+          npm ci
+          npm run check
+          npm test
+
+      - name: Build and test Windows app
+        working-directory: faceprint
+        shell: msys2 {0}
+        run: |
+          ./scripts/package-windows.sh
+          CGO_LDFLAGS='-static -ladvapi32' go test ./...
+
+      - name: Archive Windows app
+        shell: pwsh
+        run: >-
+          Compress-Archive
+          -Path faceprint/build/bin/FacePrint-windows-amd64
+          -DestinationPath faceprint/build/bin/FacePrint-windows-amd64.zip
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: FacePrint-windows-amd64
+          path: faceprint/build/bin/FacePrint-windows-amd64.zip
+          if-no-files-found: error

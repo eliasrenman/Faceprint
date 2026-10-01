@@ -1,0 +1,28 @@
+# Application and frontend build output
+/build/bin/
+/build/windows/*.syso
+/frontend/dist/
+/frontend/node_modules/
+*.app.dSYM/
+
+# Test and coverage output
+/coverage/
+/playwright-report/
+/test-results/
+*.out
+
+# Local environment and tool state
+.env
+.env.*
+!.env.example
+.npm/
+.playwright-cli/
+*.log
+npm-debug.log*
+
+# Editors and operating systems
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo

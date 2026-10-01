@@ -1,0 +1,31 @@
+{
+  "name": "frontend",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "check": "svelte-check --tsconfig ./tsconfig.json",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@babylonjs/core": "9.29.0",
+    "occt-wasm": "5.4.1",
+    "pdf-lib": "1.17.1",
+    "pdfjs-dist": "6.3.289"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "6.2.4",
+    "@tsconfig/svelte": "5.0.6",
+    "@types/node": "24.7.0",
+    "svelte": "5.57.1",
+    "svelte-check": "4.3.3",
+    "svelte-preprocess": "6.0.3",
+    "tslib": "2.8.1",
+    "typescript": "5.9.3",
+    "vite": "7.3.6",
+    "vitest": "5.0.3"
+  }
+}
